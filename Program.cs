@@ -1,29 +1,37 @@
-﻿using YoutubeExplode;
+﻿using Task_18_4_1.Commands;
+using YoutubeExplode;
 using YoutubeExplode.Videos.Streams;
 
 namespace Task_18_4_1
 {
     internal class Program
     {
-        static async Task Main(string[] args)
+        static void Main(string[] args)
         {
-            var youtube = new YoutubeClient();
-            var video = await youtube.Videos.GetAsync("https://youtube.com/watch?v=u_yIGGhubZs");
+            if (args.Length == 0)
+            {
+                Console.WriteLine("Отсутствует ссылка на  Youtube-видео!");
+                return;
+            }
 
-            var title = video.Title; 
-            var author = video.Author.ChannelTitle; 
-            var duration = video.Duration; 
+            string url = args[0];
 
-            Console.WriteLine($"Название: {title} Автор: {author} Продолжительность: {duration}");
+            // создадим отправителя
+            var commandSender = new CommandSender();
 
-            var streamManifest = await youtube.Videos.Streams.GetManifestAsync("https://youtube.com/watch?v=u_yIGGhubZs");
-            var streamInfo = streamManifest
-                .GetVideoOnlyStreams()
-                .Where(s => s.Container == Container.Mp4)
-                .GetWithHighestVideoQuality();
+            // создадим получателя
+            var youtubeVideo = new YoutubeVideo(url);
 
-            await youtube.Videos.Streams.DownloadAsync(streamInfo, $"video.{streamInfo.Container}");
+            // создадим команду
+            var commandYoutubeVideo = new CommandYoutubeVideo(youtubeVideo);
 
+            // инициализация команды
+            commandSender.SetCommand(commandYoutubeVideo);
+
+            // выполнение
+            commandSender.GetVideoInformation();
+            commandSender.UploadVideo();
+            
             Console.ReadLine();
         }
     }
